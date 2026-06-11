@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายการเบิกงาน</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='formstyle.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <span class="topbar-logo" aria-hidden="true">▤</span>
+        <span>Work Recording</span>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Withdraw Records</p>
+        <h1>รายการข้อมูลเบิกงาน</h1>
+      </div>
+    </header>
+
+    <section class="table-section" aria-label="รายการข้อมูลเบิกงาน">
+      {% if data_error %}
+        <div class="error-message">{{ data_error }}</div>
+      {% endif %}
+      <div class="table-tools search-panel" data-table-filter="withdraw-table">
+        <label class="filter-field">
+          <span>วันที่เบิก</span>
+          <input type="date" data-filter-field="date" data-date-no-future>
+        </label>
+        <label class="filter-field">
+          <span>เลขที่เอกสาร (เบิก)</span>
+          <input type="search" data-filter-field="doc" placeholder="กรอกเลขที่เอกสาร">
+        </label>
+        <label class="filter-field">
+          <span>รหัสบล็อกแก้ว</span>
+          <input type="search" data-filter-field="code" placeholder="กรอกรหัสบล็อกแก้ว">
+        </label>
+        <button class="primary-button filter-button" type="button" data-filter-submit>ค้นหา</button>
+        <button class="secondary-button filter-button" type="button" data-filter-reset>ล้าง</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="withdraw-table">
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>วันที่เบิก</th>
+              <th>เลขที่เอกสาร</th>
+              <th class="number">จำนวนรายการ</th>
+              <th>รหัสบล็อกแก้ว</th>
+              <th>รายการ</th>
+              <th class="number">จำนวนที่เบิก</th>
+              <th>ผู้บันทึก</th>
+              <th>ผู้เบิก</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+              <tr class="clickable-row" data-filter-date="{{ record['วันที่เบิกงาน'] }}" data-filter-doc="{{ record['เลขที่เอกสาร']|lower }}" data-filter-code="{{ record['รหัสบล็อกแก้ว']|lower }}" data-search="{{ (
+                record['id'] ~ ' ' ~
+                record['วันที่เบิกงาน'] ~ ' ' ~
+                record['เลขที่เอกสาร'] ~ ' ' ~
+                record['จำนวนรายการ'] ~ ' ' ~
+                record['รหัสบล็อกแก้ว'] ~ ' ' ~
+                record['รายการ'] ~ ' ' ~
+                record['รวมจำนวนที่เบิก'] ~ ' ' ~
+                record['ผู้บันทึก'] ~ ' ' ~
+                record['ผู้เบิก']
+              )|lower }}" onclick="window.location='{{ url_for('form_by_set', set_no=record['id']) }}'">
+                <td>
+                  <a class="doc-link" href="{{ url_for('form_by_set', set_no=record['id']) }}">
+                    ลำดับ {{ record['id'] }}
+                  </a>
+                </td>
+                <td>{{ record['วันที่เบิกงาน'] }}</td>
+                <td>
+                  <a class="doc-link" href="{{ url_for('form_by_set', set_no=record['id']) }}">
+                    {{ record['เลขที่เอกสาร'] }}
+                  </a>
+                </td>
+                <td class="number">{{ record['จำนวนรายการ'] }}</td>
+                <td>{{ record['รหัสบล็อกแก้ว'] }}</td>
+                <td>{{ record['รายการ'] }}</td>
+                <td class="number">{{ record['รวมจำนวนที่เบิก'] }}</td>
+                <td>{{ record['ผู้บันทึก'] }}</td>
+                <td>{{ record['ผู้เบิก'] }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="9" class="empty-state">ยังไม่มีข้อมูลเบิกงาน</td>
+              </tr>
+            {% endfor %}
+            <tr class="empty-state-row" hidden>
+              <td colspan="9" class="empty-state">ไม่พบข้อมูลที่ค้นหา</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script>
+    function normalizeDate(value) {
+      const text = (value || "").trim();
+      const thaiDate = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (thaiDate) {
+        return [
+          thaiDate[3],
+          thaiDate[1].padStart(2, "0"),
+          thaiDate[2].padStart(2, "0")
+        ].join("-");
+      }
+      return text;
+    }
+
+    document.querySelectorAll("[data-table-filter]").forEach(function (panel) {
+      document.querySelectorAll("[data-date-no-future]").forEach(function (input) {
+        const now = new Date();
+        const today = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0")
+        ].join("-");
+        input.max = today;
+        input.addEventListener("input", function () {
+          if (input.value && input.value > today) {
+            input.value = today;
+          }
+        });
+      });
+
+      const table = document.getElementById(panel.dataset.tableFilter);
+      const emptyRow = table.querySelector(".empty-state-row");
+      const rows = Array.from(table.querySelectorAll("tbody tr.clickable-row"));
+      const dateInput = panel.querySelector("[data-filter-field='date']");
+      const docInput = panel.querySelector("[data-filter-field='doc']");
+      const codeInput = panel.querySelector("[data-filter-field='code']");
+
+      function applyFilter() {
+        const dateValue = normalizeDate(dateInput.value);
+        const docValue = docInput.value.trim().toLowerCase();
+        const codeValue = codeInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+          const matchedDate = !dateValue || normalizeDate(row.dataset.filterDate) === dateValue;
+          const matchedDoc = !docValue || (row.dataset.filterDoc || "").includes(docValue);
+          const matchedCode = !codeValue || (row.dataset.filterCode || "").includes(codeValue);
+          const matched = matchedDate && matchedDoc && matchedCode;
+          row.hidden = !matched;
+          if (matched) {
+            visibleCount += 1;
+          }
+        });
+
+        if (emptyRow) {
+          emptyRow.hidden = visibleCount !== 0;
+        }
+      }
+
+      panel.querySelector("[data-filter-submit]").addEventListener("click", applyFilter);
+      panel.querySelector("[data-filter-reset]").addEventListener("click", function () {
+        dateInput.value = "";
+        docInput.value = "";
+        codeInput.value = "";
+        applyFilter();
+      });
+
+      [dateInput, docInput, codeInput].forEach(function (input) {
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            applyFilter();
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

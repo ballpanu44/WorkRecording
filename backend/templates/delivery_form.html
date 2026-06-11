@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ฟอร์มส่งงาน {{ header['เลขที่เอกสาร'] }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='formstyle.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <span class="topbar-logo" aria-hidden="true">▤</span>
+        <span>Work Recording</span>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <header class="page-header form-page-header">
+      <div class="page-header-spacer" aria-hidden="true"></div>
+      <div class="page-header-title">
+        <p class="eyebrow">Delivery Preview</p>
+        <h1>ฟอร์มบันทึกการส่งงาน ลำดับ {{ header['id'] }}</h1>
+      </div>
+      <div class="page-header-action">
+        <a class="secondary-button" href="{{ url_for('delivery_index') }}">กลับหน้ารายการ</a>
+      </div>
+    </header>
+
+    <form class="edit-form official-form delivery-form" action="{{ url_for('delivery_preview_pdf') }}" method="post" target="_blank" id="delivery-form">
+      <section class="form-section delivery-panel" aria-label="ข้อมูลการส่งงาน">
+        <h2 class="section-title">ข้อมูลการส่งงาน</h2>
+        <div class="delivery-grid">
+          <label>
+            <span>วันที่ส่งงาน</span>
+            <input type="date" name="delivery_date" value="{{ header['วันที่ส่งงาน'] }}" data-date-no-future readonly>
+          </label>
+          <label>
+            <span>เลขที่เอกสาร (โอน)</span>
+            <input type="text" name="doc_no" value="{{ header['เลขที่เอกสาร'] }}" readonly>
+          </label>
+          <label>
+            <span>รหัสสินค้า</span>
+            <input type="text" value="{{ header['รหัสสินค้า'] }}" disabled>
+          </label>
+          <label>
+            <span>รายการ</span>
+            <input type="text" value="{{ header['รายการ'] }}" disabled>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section form-items" aria-label="รายการส่งงาน">
+        <h2 class="section-title">รายการส่งงาน</h2>
+        <div class="table-wrap">
+          <table class="data-table edit-table delivery-table">
+            <thead>
+              <tr>
+                <th>รหัสสินค้า</th>
+                <th>รายการ</th>
+                <th class="number withdraw-color">ยอดเบิก</th>
+                <th class="number reject-color">งานเสีย</th>
+                <th class="number good-color">งานดี</th>
+                <th class="number finish-color">งานสำเร็จรูป</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                <tr>
+                  <td>
+                    <input type="text" name="item_code[]" value="{{ item['รหัสสินค้า'] }}" readonly>
+                  </td>
+                  <td>
+                    <input type="text" name="item_name[]" value="{{ item['รายการ'] }}" readonly>
+                  </td>
+                  <td>
+                    <input class="number-input" type="text" name="withdraw_qty[]" value="{{ item['ยอดเบิก'] }}" readonly>
+                  </td>
+                  <td>
+                    <input class="number-input" type="text" name="reject_qty[]" value="{{ item['งานเสีย'] }}" readonly>
+                  </td>
+                  <td>
+                    <input class="number-input" type="text" name="good_qty[]" value="{{ item['งานดี'] }}" readonly>
+                  </td>
+                  <td>
+                    <input class="number-input" type="text" name="finish_qty[]" value="{{ item['งานสำเร็จรูป'] }}" readonly>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <input type="hidden" name="recorder" value="{{ header['ผู้บันทึก'] }}">
+
+      <div class="actions">
+        <button class="primary-button" type="submit" data-preview="true">Preview PDF</button>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    function normalizeInputDate(value) {
+      const text = (value || "").trim();
+      const isoDate = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (isoDate) {
+        return [
+          isoDate[1],
+          isoDate[2].padStart(2, "0"),
+          isoDate[3].padStart(2, "0")
+        ].join("-");
+      }
+
+      const slashDate = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (slashDate) {
+        return [
+          slashDate[3],
+          slashDate[1].padStart(2, "0"),
+          slashDate[2].padStart(2, "0")
+        ].join("-");
+      }
+
+      return text;
+    }
+
+    document.querySelectorAll("[data-date-no-future]").forEach(function (input) {
+      const now = new Date();
+      const today = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
+      ].join("-");
+      input.max = today;
+      input.value = normalizeInputDate(input.value || input.getAttribute("value"));
+      input.addEventListener("input", function () {
+        if (input.value && input.value > today) {
+          input.value = today;
+        }
+      });
+    });
+
+    document.getElementById("delivery-form").addEventListener("submit", function (event) {
+      if (!event.submitter || !event.submitter.dataset.preview) {
+        return;
+      }
+      const docNo = this.elements.doc_no.value.trim() || "preview";
+      this.action = "/delivery/preview_pdf/" + encodeURIComponent(docNo);
+    });
+  </script>
+</body>
+</html>

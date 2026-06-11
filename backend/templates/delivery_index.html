@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายการส่งงาน</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='formstyle.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <span class="topbar-logo" aria-hidden="true">▤</span>
+        <span>Work Recording</span>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Delivery Records</p>
+        <h1>รายการข้อมูลส่งงาน</h1>
+      </div>
+    </header>
+
+    <section class="table-section" aria-label="รายการข้อมูลส่งงาน">
+      {% if data_error %}
+        <div class="error-message">{{ data_error }}</div>
+      {% endif %}
+      <div class="table-tools search-panel" data-table-filter="delivery-table">
+        <label class="filter-field">
+          <span>วันที่ส่งงาน</span>
+          <input type="date" data-filter-field="date" data-date-no-future>
+        </label>
+        <label class="filter-field">
+          <span>เลขที่เอกสาร (โอน)</span>
+          <input type="search" data-filter-field="doc" placeholder="กรอกเลขที่เอกสาร">
+        </label>
+        <label class="filter-field">
+          <span>รหัสสินค้า</span>
+          <input type="search" data-filter-field="code" placeholder="กรอกรหัสสินค้า">
+        </label>
+        <button class="primary-button filter-button" type="button" data-filter-submit>ค้นหา</button>
+        <button class="secondary-button filter-button" type="button" data-filter-reset>ล้าง</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="delivery-table">
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>วันที่ส่งงาน</th>
+              <th>เลขที่เอกสาร (โอน)</th>
+              <th>รหัสสินค้า</th>
+              <th>รายการ</th>
+              <th class="number">ยอดเบิก</th>
+              <th class="number">งานเสีย</th>
+              <th class="number">งานดี</th>
+              <th class="number">งานสำเร็จรูป</th>
+              <th>ผู้บันทึก</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+              <tr class="clickable-row" data-filter-date="{{ record['วันที่ส่งงาน'] }}" data-filter-doc="{{ record['เลขที่เอกสาร']|lower }}" data-filter-code="{{ record['รหัสสินค้า']|lower }}" data-search="{{ (
+                record['id'] ~ ' ' ~
+                record['วันที่ส่งงาน'] ~ ' ' ~
+                record['เลขที่เอกสาร'] ~ ' ' ~
+                record['รหัสสินค้า'] ~ ' ' ~
+                record['รายการ'] ~ ' ' ~
+                record['รวมยอดเบิก'] ~ ' ' ~
+                record['รวมงานเสีย'] ~ ' ' ~
+                record['รวมงานดี'] ~ ' ' ~
+                record['รวมงานสำเร็จรูป'] ~ ' ' ~
+                record['ผู้บันทึก']
+              )|lower }}" onclick="window.location='{{ url_for('delivery_form', set_no=record['id']) }}'">
+                <td>
+                  <a class="doc-link" href="{{ url_for('delivery_form', set_no=record['id']) }}">
+                    ลำดับ {{ record['id'] }}
+                  </a>
+                </td>
+                <td>{{ record['วันที่ส่งงาน'] }}</td>
+                <td>{{ record['เลขที่เอกสาร'] }}</td>
+                <td>{{ record['รหัสสินค้า'] }}</td>
+                <td>{{ record['รายการ'] }}</td>
+                <td class="number">{{ record['รวมยอดเบิก'] }}</td>
+                <td class="number">{{ record['รวมงานเสีย'] }}</td>
+                <td class="number">{{ record['รวมงานดี'] }}</td>
+                <td class="number">{{ record['รวมงานสำเร็จรูป'] }}</td>
+                <td>{{ record['ผู้บันทึก'] }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="10" class="empty-state">ยังไม่มีข้อมูลส่งงาน</td>
+              </tr>
+            {% endfor %}
+            <tr class="empty-state-row" hidden>
+              <td colspan="10" class="empty-state">ไม่พบข้อมูลที่ค้นหา</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script>
+    function normalizeDate(value) {
+      const text = (value || "").trim();
+      const thaiDate = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (thaiDate) {
+        return [
+          thaiDate[3],
+          thaiDate[1].padStart(2, "0"),
+          thaiDate[2].padStart(2, "0")
+        ].join("-");
+      }
+      return text;
+    }
+
+    document.querySelectorAll("[data-table-filter]").forEach(function (panel) {
+      document.querySelectorAll("[data-date-no-future]").forEach(function (input) {
+        const now = new Date();
+        const today = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0")
+        ].join("-");
+        input.max = today;
+        input.addEventListener("input", function () {
+          if (input.value && input.value > today) {
+            input.value = today;
+          }
+        });
+      });
+
+      const table = document.getElementById(panel.dataset.tableFilter);
+      const emptyRow = table.querySelector(".empty-state-row");
+      const rows = Array.from(table.querySelectorAll("tbody tr.clickable-row"));
+      const dateInput = panel.querySelector("[data-filter-field='date']");
+      const docInput = panel.querySelector("[data-filter-field='doc']");
+      const codeInput = panel.querySelector("[data-filter-field='code']");
+
+      function applyFilter() {
+        const dateValue = normalizeDate(dateInput.value);
+        const docValue = docInput.value.trim().toLowerCase();
+        const codeValue = codeInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+          const matchedDate = !dateValue || normalizeDate(row.dataset.filterDate) === dateValue;
+          const matchedDoc = !docValue || (row.dataset.filterDoc || "").includes(docValue);
+          const matchedCode = !codeValue || (row.dataset.filterCode || "").includes(codeValue);
+          const matched = matchedDate && matchedDoc && matchedCode;
+          row.hidden = !matched;
+          if (matched) {
+            visibleCount += 1;
+          }
+        });
+
+        if (emptyRow) {
+          emptyRow.hidden = visibleCount !== 0;
+        }
+      }
+
+      panel.querySelector("[data-filter-submit]").addEventListener("click", applyFilter);
+      panel.querySelector("[data-filter-reset]").addEventListener("click", function () {
+        dateInput.value = "";
+        docInput.value = "";
+        codeInput.value = "";
+        applyFilter();
+      });
+
+      [dateInput, docInput, codeInput].forEach(function (input) {
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            applyFilter();
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

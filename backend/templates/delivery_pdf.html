@@ -15,7 +15,7 @@
     body {
       color: #111827;
       font-family: "Tahoma", "Leelawadee UI", "Noto Sans Thai", sans-serif;
-      font-size: 11px;
+      font-size: 10.5px;
       line-height: 1.45;
       margin: 0;
     }
@@ -30,14 +30,14 @@
       display: grid;
       gap: 7px 22px;
       grid-template-columns: 1fr 1fr;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .field {
       align-items: end;
       display: grid;
       gap: 8px;
-      grid-template-columns: 86px 1fr;
+      grid-template-columns: 104px 1fr;
       min-height: 22px;
     }
 
@@ -49,13 +49,6 @@
       border-bottom: 1px solid #374151;
       min-height: 18px;
       padding: 0 6px 2px;
-    }
-
-    h2 {
-      font-size: 13px;
-      line-height: 1.6;
-      margin: 12px 0 8px;
-      page-break-after: avoid;
     }
 
     .pdf-table {
@@ -71,7 +64,7 @@
       background: #ffffff;
       border: 1px solid #111827;
       min-height: 25px;
-      padding: 4px 5px;
+      padding: 4px;
       vertical-align: middle;
     }
 
@@ -109,51 +102,51 @@
   </style>
 </head>
 <body>
-  <h1>ฟอร์มบันทึกการเบิกงาน</h1>
+  <h1>ฟอร์มบันทึกการส่งงาน</h1>
 
   <section class="meta">
     <div class="field">
-      <strong>วันที่เบิกงาน</strong>
-      <span class="line">{{ withdraw_date }}</span>
+      <strong>วันที่ส่งงาน</strong>
+      <span class="line">{{ delivery_date }}</span>
     </div>
     <div class="field">
-      <strong>เลขที่เอกสาร (เบิก)</strong>
+      <strong>เลขที่เอกสาร (โอน)</strong>
       <span class="line">{{ doc_no }}</span>
     </div>
     <div class="field">
-      <strong>รหัสงบประมาณ</strong>
-      <span class="line">{{ budget_code }}</span>
-    </div>
-    <div class="field">
-      <strong>รหัสบัญชี</strong>
-      <span class="line">{{ account_code }}</span>
-    </div>
-    <div class="field">
-      <strong>Lot no.</strong>
-      <span class="line">{{ lot_no }}</span>
+      <strong>ผู้บันทึก</strong>
+      <span class="line">{{ recorder }}</span>
     </div>
   </section>
 
-  <h2>รายการที่เบิก</h2>
   <table class="pdf-table">
     <colgroup>
-      <col style="width: 28%;">
-      <col style="width: 54%;">
-      <col style="width: 18%;">
+      <col style="width: 16%;">
+      <col style="width: 42%;">
+      <col style="width: 10%;">
+      <col style="width: 10%;">
+      <col style="width: 10%;">
+      <col style="width: 12%;">
     </colgroup>
     <thead>
       <tr>
-        <th>รหัสบล็อกแก้ว</th>
+        <th>รหัสสินค้า</th>
         <th>รายการ</th>
-        <th>จำนวนที่เบิก</th>
+        <th>ยอดเบิก</th>
+        <th>งานเสีย</th>
+        <th>งานดี</th>
+        <th>งานสำเร็จรูป</th>
       </tr>
     </thead>
     <tbody>
       {% for item in items %}
         <tr>
-          <td>{{ item['รหัสบล็อกแก้ว'] }}</td>
+          <td>{{ item['รหัสสินค้า'] }}</td>
           <td>{{ item['รายการ'] }}</td>
-          <td class="pdf-num">{{ item['จำนวนที่เบิก'] }}</td>
+          <td class="pdf-num">{{ item['ยอดเบิก'] }}</td>
+          <td class="pdf-num">{{ item['งานเสีย'] }}</td>
+          <td class="pdf-num">{{ item['งานดี'] }}</td>
+          <td class="pdf-num">{{ item['งานสำเร็จรูป'] }}</td>
         </tr>
       {% endfor %}
       {% for _ in empty_rows %}
@@ -161,14 +154,17 @@
           <td>&nbsp;</td>
           <td>&nbsp;</td>
           <td class="pdf-num">&nbsp;</td>
+          <td class="pdf-num">&nbsp;</td>
+          <td class="pdf-num">&nbsp;</td>
+          <td class="pdf-num">&nbsp;</td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
 
   <div class="signature">
-    <div class="signature-name">{{ withdrawer }}</div>
-    <div class="signature-role">ผู้เบิก</div>
+    <div class="signature-name">{{ recorder }}</div>
+    <div class="signature-role">ผู้ส่งงาน</div>
   </div>
 </body>
 </html>
