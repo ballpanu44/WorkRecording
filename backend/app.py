@@ -26,8 +26,9 @@ GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID", "").strip()
 GOOGLE_SHEET_GID = os.getenv("GOOGLE_SHEET_GID", "").strip()
 DELIVERY_GOOGLE_CSV_URL = os.getenv("DELIVERY_GOOGLE_CSV_URL", "").strip()
 DELIVERY_GOOGLE_SHEET_GID = os.getenv("DELIVERY_GOOGLE_SHEET_GID", "").strip()
-PACKAGED_THAI_FONT_PATH = BASE_DIR / "static" / "fonts" / "NotoSansThai.ttf"
-PACKAGED_THAI_BOLD_FONT_PATH = PACKAGED_THAI_FONT_PATH
+PACKAGED_THAI_FONT_PATH = BASE_DIR / "static" / "fonts" / "Sarabun-Regular.ttf"
+PACKAGED_THAI_BOLD_FONT_PATH = BASE_DIR / "static" / "fonts" / "Sarabun-Bold.ttf"
+NOTO_THAI_FONT_PATH = BASE_DIR / "static" / "fonts" / "NotoSansThai.ttf"
 THAI_FONT_PATH = Path("C:/Windows/Fonts/upcfl.ttf")
 THAI_BOLD_FONT_PATH = Path("C:/Windows/Fonts/upcfb.ttf")
 FALLBACK_THAI_FONT_PATH = Path("C:/Windows/Fonts/tahoma.ttf")
@@ -97,6 +98,16 @@ def frontend_index():
 @app.get("/healthz")
 def healthz():
     return "ok"
+
+
+@app.get("/fontz")
+def fontz():
+    return {
+        "regular": str(PACKAGED_THAI_FONT_PATH),
+        "regular_exists": PACKAGED_THAI_FONT_PATH.exists(),
+        "bold": str(PACKAGED_THAI_BOLD_FONT_PATH),
+        "bold_exists": PACKAGED_THAI_BOLD_FONT_PATH.exists(),
+    }
 
 
 @app.get("/index.html")
@@ -316,8 +327,8 @@ def get_reportlab_font_names():
 
     regular_font = "Helvetica"
     bold_font = "Helvetica-Bold"
-    regular_candidates = [PACKAGED_THAI_FONT_PATH, THAI_FONT_PATH, FALLBACK_THAI_FONT_PATH]
-    bold_candidates = [PACKAGED_THAI_BOLD_FONT_PATH, THAI_BOLD_FONT_PATH, FALLBACK_THAI_BOLD_FONT_PATH]
+    regular_candidates = [PACKAGED_THAI_FONT_PATH, NOTO_THAI_FONT_PATH, THAI_FONT_PATH, FALLBACK_THAI_FONT_PATH]
+    bold_candidates = [PACKAGED_THAI_BOLD_FONT_PATH, NOTO_THAI_FONT_PATH, THAI_BOLD_FONT_PATH, FALLBACK_THAI_BOLD_FONT_PATH]
     regular_path = next((path for path in regular_candidates if path.exists()), None)
     bold_path = next((path for path in bold_candidates if path.exists()), None)
 
