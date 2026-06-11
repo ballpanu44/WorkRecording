@@ -7,7 +7,7 @@ from urllib.error import HTTPError
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import pandas as pd
-from flask import Flask, Response, abort, render_template, request, send_from_directory
+from flask import Flask, Response, abort, redirect, render_template, request, send_from_directory
 
 try:
     from dotenv import load_dotenv
@@ -26,6 +26,8 @@ GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID", "").strip()
 GOOGLE_SHEET_GID = os.getenv("GOOGLE_SHEET_GID", "").strip()
 DELIVERY_GOOGLE_CSV_URL = os.getenv("DELIVERY_GOOGLE_CSV_URL", "").strip()
 DELIVERY_GOOGLE_SHEET_GID = os.getenv("DELIVERY_GOOGLE_SHEET_GID", "").strip()
+PACKAGED_THAI_FONT_PATH = BASE_DIR / "static" / "fonts" / "NotoSansThai.ttf"
+PACKAGED_THAI_BOLD_FONT_PATH = PACKAGED_THAI_FONT_PATH
 THAI_FONT_PATH = Path("C:/Windows/Fonts/upcfl.ttf")
 THAI_BOLD_FONT_PATH = Path("C:/Windows/Fonts/upcfb.ttf")
 FALLBACK_THAI_FONT_PATH = Path("C:/Windows/Fonts/tahoma.ttf")
@@ -87,6 +89,8 @@ DELIVERY_COLUMN_ALIASES = {
 
 @app.get("/")
 def frontend_index():
+    if not (FRONTEND_DIR / "index.html").exists():
+        return redirect("/withdraw")
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
@@ -103,7 +107,10 @@ def healthz():
 @app.get("/styles.css")
 @app.get("/app.js")
 def frontend_file():
-    return send_from_directory(FRONTEND_DIR, request.path.lstrip("/"))
+    filename = request.path.lstrip("/")
+    if not (FRONTEND_DIR / filename).exists():
+        abort(404)
+    return send_from_directory(FRONTEND_DIR, filename)
 
 def clean_value(value):
     if pd.isna(value):
@@ -309,13 +316,15 @@ def get_reportlab_font_names():
 
     regular_font = "Helvetica"
     bold_font = "Helvetica-Bold"
-    regular_path = THAI_FONT_PATH if THAI_FONT_PATH.exists() else FALLBACK_THAI_FONT_PATH
-    bold_path = THAI_BOLD_FONT_PATH if THAI_BOLD_FONT_PATH.exists() else FALLBACK_THAI_BOLD_FONT_PATH
+    regular_candidates = [PACKAGED_THAI_FONT_PATH, THAI_FONT_PATH, FALLBACK_THAI_FONT_PATH]
+    bold_candidates = [PACKAGED_THAI_BOLD_FONT_PATH, THAI_BOLD_FONT_PATH, FALLBACK_THAI_BOLD_FONT_PATH]
+    regular_path = next((path for path in regular_candidates if path.exists()), None)
+    bold_path = next((path for path in bold_candidates if path.exists()), None)
 
-    if regular_path.exists():
+    if regular_path:
         pdfmetrics.registerFont(TTFont("ThaiRegular", str(regular_path)))
         regular_font = "ThaiRegular"
-    if bold_path.exists():
+    if bold_path:
         pdfmetrics.registerFont(TTFont("ThaiBold", str(bold_path)))
         bold_font = "ThaiBold"
     return regular_font, bold_font
