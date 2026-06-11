@@ -369,32 +369,33 @@ def build_withdraw_pdf_reportlab(context):
     normal = ParagraphStyle(
         "ThaiNormal",
         fontName=regular_font,
-        fontSize=12,
-        leading=14,
+        fontSize=10,
+        leading=12,
         textColor=colors.HexColor("#111827"),
+        wordWrap="CJK",
     )
     title = ParagraphStyle(
         "ThaiTitle",
         parent=normal,
         alignment=TA_CENTER,
-        fontName=regular_font,
-        fontSize=21,
-        leading=24,
+        fontName=bold_font,
+        fontSize=18,
+        leading=22,
         spaceAfter=9,
     )
     heading = ParagraphStyle(
         "ThaiHeading",
         parent=normal,
-        fontName=regular_font,
-        fontSize=13,
-        leading=15,
+        fontName=bold_font,
+        fontSize=11,
+        leading=13,
         spaceBefore=7,
         spaceAfter=5,
     )
     center = ParagraphStyle("ThaiCenter", parent=normal, alignment=TA_CENTER)
     right = ParagraphStyle("ThaiRight", parent=normal, alignment=TA_RIGHT)
-    label = ParagraphStyle("ThaiLabel", parent=normal, fontName=regular_font)
-    bold_center = ParagraphStyle("ThaiBoldCenter", parent=center, fontName=regular_font)
+    label = ParagraphStyle("ThaiLabel", parent=normal, fontName=bold_font)
+    bold_center = ParagraphStyle("ThaiBoldCenter", parent=center, fontName=bold_font)
 
     def p(text, style=normal):
         return Paragraph(make_paragraph(text, style), style)
@@ -451,13 +452,14 @@ def build_withdraw_pdf_reportlab(context):
                 p(item["จำนวนที่เบิก"], right),
             ]
         )
-    for _ in range(max(0, 18 - len(context["items"]))):
+    empty_count = max(0, 18 - len(context["items"]))
+    for _ in range(empty_count):
         rows.append(["", "", ""])
 
     item_table = Table(
         rows,
-        colWidths=[50 * mm, 97 * mm, 35 * mm],
-        rowHeights=[7.5 * mm] + [7 * mm] * (len(rows) - 1),
+        colWidths=[46 * mm, 101 * mm, 35 * mm],
+        rowHeights=[7.5 * mm] + [None] * len(context["items"]) + [7 * mm] * empty_count,
     )
     item_table.setStyle(
         TableStyle(
@@ -521,20 +523,26 @@ def build_delivery_pdf_reportlab(context):
         bottomMargin=12 * mm,
     )
 
-    normal = ParagraphStyle("DeliveryNormal", fontName=regular_font, fontSize=11.5, leading=13.5)
+    normal = ParagraphStyle(
+        "DeliveryNormal",
+        fontName=regular_font,
+        fontSize=9.5,
+        leading=11.5,
+        wordWrap="CJK",
+    )
     title = ParagraphStyle(
         "DeliveryTitle",
         parent=normal,
         alignment=TA_CENTER,
-        fontName=regular_font,
-        fontSize=21,
-        leading=24,
+        fontName=bold_font,
+        fontSize=18,
+        leading=22,
         spaceAfter=9,
     )
-    label = ParagraphStyle("DeliveryLabel", parent=normal, fontName=regular_font)
+    label = ParagraphStyle("DeliveryLabel", parent=normal, fontName=bold_font)
     center = ParagraphStyle("DeliveryCenter", parent=normal, alignment=TA_CENTER)
     right = ParagraphStyle("DeliveryRight", parent=normal, alignment=TA_RIGHT)
-    bold_center = ParagraphStyle("DeliveryBoldCenter", parent=center, fontName=regular_font)
+    bold_center = ParagraphStyle("DeliveryBoldCenter", parent=center, fontName=bold_font)
 
     def p(text, style=normal):
         return Paragraph(make_paragraph(text, style), style)
@@ -592,10 +600,15 @@ def build_delivery_pdf_reportlab(context):
                 p(item["งานสำเร็จรูป"], right),
             ]
         )
-    for _ in range(max(0, 16 - len(context["items"]))):
+    empty_count = max(0, 16 - len(context["items"]))
+    for _ in range(empty_count):
         rows.append(["", "", "", "", "", ""])
 
-    table = Table(rows, colWidths=[27 * mm, 77 * mm, 20 * mm, 20 * mm, 20 * mm, 22 * mm])
+    table = Table(
+        rows,
+        colWidths=[27 * mm, 69 * mm, 22 * mm, 22 * mm, 22 * mm, 24 * mm],
+        rowHeights=[7.5 * mm] + [None] * len(context["items"]) + [7 * mm] * empty_count,
+    )
     table.setStyle(
         TableStyle(
             [
